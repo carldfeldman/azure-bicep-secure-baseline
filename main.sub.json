@@ -1,0 +1,105 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.39.26.7824",
+      "templateHash": "8968598142062395594"
+    }
+  },
+  "parameters": {
+    "workspaceId": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "activityLogsToLAW",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "workspaceId": {
+            "value": "[parameters('workspaceId')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "12942539231274900346"
+            }
+          },
+          "parameters": {
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the Log Analytics Workspace."
+              }
+            },
+            "diagnosticSettingName": {
+              "type": "string",
+              "defaultValue": "ds-subscription-activitylog-to-law",
+              "metadata": {
+                "description": "Name of the diagnostic setting."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "name": "[parameters('diagnosticSettingName')]",
+              "properties": {
+                "workspaceId": "[parameters('workspaceId')]",
+                "logs": [
+                  {
+                    "category": "Administrative",
+                    "enabled": true
+                  },
+                  {
+                    "category": "Security",
+                    "enabled": true
+                  },
+                  {
+                    "category": "ServiceHealth",
+                    "enabled": true
+                  },
+                  {
+                    "category": "Alert",
+                    "enabled": true
+                  },
+                  {
+                    "category": "Recommendation",
+                    "enabled": true
+                  },
+                  {
+                    "category": "Policy",
+                    "enabled": true
+                  },
+                  {
+                    "category": "Autoscale",
+                    "enabled": true
+                  },
+                  {
+                    "category": "ResourceHealth",
+                    "enabled": true
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
