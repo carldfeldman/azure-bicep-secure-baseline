@@ -39,3 +39,18 @@ and governance controls.
 ├── parameters/
 │   ├── dev.bicepparam
 │   └── dev.sub.bicepparam
+
+### Microsoft Sentinel 
+
+This baseline can optionally enable Microsoft Sentinel and deploy a small set of custom analytics rules via Bicep:
+
+- `modules/sentinel-onboarding.bicep` – onboards Sentinel to the Log Analytics workspace using `Microsoft.SecurityInsights/onboardingStates`
+- `modules/sentinel-analytics-rules.bicep` – deploys three scheduled analytics rules:
+  - Multiple sign-in failures from the same IP
+  - New user added to privileged Entra ID roles
+  - Suspicious PowerShell usage on servers
+
+Sentinel onboarding and analytics are controlled via parameters:
+
+- `enableSentinel` – toggles Sentinel on/off (default: `false`)
+- `deployAnalyticsRules` – toggles custom rules on/off (default: `true`)
