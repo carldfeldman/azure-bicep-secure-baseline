@@ -1,56 +1,133 @@
-# Azure Secure Monitoring Baseline (Bicep)
+Azure Sentinel Monitoring Baseline (Bicep)
+Overview
 
-## Overview
-This repository implements a secure Azure monitoring baseline using Infrastructure as Code (Bicep).
-It centralises Azure subscription Activity Logs into a Log Analytics Workspace to provide
-platform-level visibility, auditing, and security telemetry.
+This repository implements a lightweight Azure security monitoring baseline using Infrastructure as Code (Bicep). It provisions a Log Analytics Workspace and optionally enables Microsoft Sentinel with detections deployed as code. The goal is to establish an opinionated but extensible foundation suitable for security labs, demonstrations, and portfolio projects.
 
-The solution is designed to be lightweight, cost-aware, and extensible for future SIEM
-and governance controls.
+The solution is intentionally cost-aware and modular, allowing engineers to enable or disable Sentinel components via deployment parameters.
 
-## Architecture
-- Log Analytics Workspace (resource-group scope)
-- Subscription-wide Activity Log diagnostic settings
-- Modular Bicep design with clear separation of scopes
+Architecture Components
+Component	Purpose
+Log Analytics Workspace	Central workspace for platform logs, telemetry, and security data
+Microsoft Sentinel (optional)	Enables SIEM capabilities over the workspace
+Custom Analytics Rules (optional)	Deployed via IaC to simulate real SOC detection pipelines
+Modular Bicep Templates	Encourages reusability and clear separation of concerns
+Security Value Proposition
 
-## Security Value
-- Auditing of administrative and security actions across the subscription
-- Visibility into policy changes, service health, and resource state
-- Foundational telemetry for Microsoft Sentinel enablement
-- Supports compliance and incident investigation use cases
+This baseline provides:
 
-## Deployment Scopes
-- **Resource Group scope**: Core monitoring resources
-- **Subscription scope**: Activity Log diagnostic settings
+Platform-level auditing and telemetry
 
-## Cost Considerations
-- Log Analytics retention set to 30 days
-- Microsoft Sentinel intentionally not enabled by default
-- Suitable for development and small production environments
+SIEM enablement without portal-driven configuration
 
-## Repository Structure
-```text
+Deterministic deployments via Bicep modules
+
+MITRE ATT&CK-mapped detections as code
+
+Demonstration of SOC pipeline primitives (ingest → analyze → alert)
+
+This makes the project suitable for:
+
+✔ cloud security training
+✔ interview demonstration
+✔ purple lab environments
+✔ IaC + Sentinel integration testing
+
+Sentinel as Code
+
+Sentinel onboarding and rule deployment are implemented as Bicep modules:
+
+Sentinel Onboarding
+modules/sentinel-onboarding.bicep
+
+
+Implements:
+
+Microsoft.SecurityInsights/onboardingStates
+
+Attaches Sentinel to the workspace declaratively (no portal usage)
+
+Custom Analytics Rules
+modules/sentinel-analytics-rules.bicep
+
+
+Deploys 3 scheduled analytics rules mapped to MITRE tactics:
+
+Detection	Use Case	MITRE Tactics
+Multiple sign-in failures from same IP	Dictionary / credential spray attempts	Credential Access
+New user added to privileged directory roles	Privilege escalation via role assignment	Privilege Escalation / Persistence
+Suspicious PowerShell execution	Common attacker execution patterns	Execution / Defense Evasion
+
+These rules are intentionally generic so they can be used in labs without requiring enterprise data sources.
+
+Parameter Controls
+
+Deployment behavior is controlled via two Boolean parameters:
+
+Parameter	Default	Behavior
+enableSentinel	false	Enables Sentinel onboarding + workspace integration
+deployAnalyticsRules	true	Deploys custom Analytics Rules into Sentinel
+
+Examples:
+
+Enable Sentinel only:
+
+az deployment group create \
+  --resource-group <rg> \
+  --template-file main.bicep \
+  --parameters enableSentinel=true
+
+
+Enable Sentinel + Rules:
+
+az deployment group create \
+  --resource-group <rg> \
+  --template-file main.bicep \
+  --parameters enableSentinel=true deployAnalyticsRules=true
+
+Deployment Scopes
+Scope	Components
+Resource Group	Workspace + Sentinel modules
+Subscription (optional future extension)	Activity Logs, Defender plans, Policy
+Repository Structure
 .
-├── main.bicep
-├── main.sub.bicep
+├── main.bicep                        # core deployment entrypoint
 ├── modules/
-│   ├── log-analytics.bicep
-│   └── activity-log-to-law.bicep
+│   ├── log-analytics.bicep           # workspace setup
+│   ├── sentinel-onboarding.bicep     # enables Sentinel via onboardingStates
+│   └── sentinel-analytics-rules.bicep# custom detections (MITRE mapped)
 ├── parameters/
-│   ├── dev.bicepparam
-│   └── dev.sub.bicepparam
+│   └── dev.bicepparam                # example deployment configuration
 
-### Microsoft Sentinel 
+Cost Considerations
 
-This baseline can optionally enable Microsoft Sentinel and deploy a small set of custom analytics rules via Bicep:
+This baseline is designed for labs and demos:
 
-- `modules/sentinel-onboarding.bicep` – onboards Sentinel to the Log Analytics workspace using `Microsoft.SecurityInsights/onboardingStates`
-- `modules/sentinel-analytics-rules.bicep` – deploys three scheduled analytics rules:
-  - Multiple sign-in failures from the same IP
-  - New user added to privileged Entra ID roles
-  - Suspicious PowerShell usage on servers
+Sentinel disabled by default
 
-Sentinel onboarding and analytics are controlled via parameters:
+30-day retention by default
 
-- `enableSentinel` – toggles Sentinel on/off (default: `false`)
-- `deployAnalyticsRules` – toggles custom rules on/off (default: `true`)
+Minimal ingestion footprint
+
+No premium connectors
+
+No automation charges
+
+No Defender plan enablement
+
+Full SOC workloads (UEBA, Threat Intel, ASC integration, Defender plans, etc.) can be layered atop this baseline if required.
+
+Target Audience
+
+This baseline is intended for:
+
+Cloud Security Engineers
+
+Detection Engineers
+
+SOC Analysts
+
+Security Consultants
+
+Red/Purple Team Labs
+
+Interview Portfolio Demonstrations
