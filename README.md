@@ -1,133 +1,109 @@
-Azure Sentinel Monitoring Baseline (Bicep)
+Azure Secure Monitoring & Sentinel Baseline (Bicep + CI/CD)
 Overview
 
-This repository implements a lightweight Azure security monitoring baseline using Infrastructure as Code (Bicep). It provisions a Log Analytics Workspace and optionally enables Microsoft Sentinel with detections deployed as code. The goal is to establish an opinionated but extensible foundation suitable for security labs, demonstrations, and portfolio projects.
+This repository implements a production-ready Azure security monitoring baseline using Infrastructure as Code (Bicep) and GitHub Actions CI/CD.
 
-The solution is intentionally cost-aware and modular, allowing engineers to enable or disable Sentinel components via deployment parameters.
+The project provisions a Log Analytics Workspace, onboards Microsoft Sentinel programmatically, and deploys Sentinel analytics rules as code, demonstrating a real-world, cost-aware SIEM baseline suitable for enterprise environments.
 
-Architecture Components
-Component	Purpose
-Log Analytics Workspace	Central workspace for platform logs, telemetry, and security data
-Microsoft Sentinel (optional)	Enables SIEM capabilities over the workspace
-Custom Analytics Rules (optional)	Deployed via IaC to simulate real SOC detection pipelines
-Modular Bicep Templates	Encourages reusability and clear separation of concerns
-Security Value Proposition
+All deployments are automated, repeatable, and validated using what-if before apply.
 
-This baseline provides:
+Architecture
 
-Platform-level auditing and telemetry
+Core components deployed via Bicep:
 
-SIEM enablement without portal-driven configuration
+Log Analytics Workspace (resource-group scope)
 
-Deterministic deployments via Bicep modules
+Microsoft Sentinel onboarding using Microsoft.SecurityInsights/onboardingStates
 
-MITRE ATT&CK-mapped detections as code
+Sentinel analytics rules deployed as ARM child resources
 
-Demonstration of SOC pipeline primitives (ingest → analyze → alert)
+Optional feature toggles to control cost and complexity
 
-This makes the project suitable for:
+Delivery pipeline:
 
-✔ cloud security training
-✔ interview demonstration
-✔ purple lab environments
-✔ IaC + Sentinel integration testing
+GitHub Actions CI/CD
 
-Sentinel as Code
+Azure OIDC authentication (no secrets stored)
 
-Sentinel onboarding and rule deployment are implemented as Bicep modules:
+Bicep validation + what-if
 
-Sentinel Onboarding
-modules/sentinel-onboarding.bicep
+Idempotent deployment to Azure
 
+Microsoft Sentinel – Detections as Code
 
-Implements:
+This project demonstrates Sentinel analytics rules managed entirely as code, rather than manually in the portal.
 
-Microsoft.SecurityInsights/onboardingStates
+Baseline Rule (Safe for New Workspaces)
 
-Attaches Sentinel to the workspace declaratively (no portal usage)
+AzureActivity: Sensitive changes
 
-Custom Analytics Rules
-modules/sentinel-analytics-rules.bicep
+Detects privileged operations such as:
 
+Role assignments
 
-Deploys 3 scheduled analytics rules mapped to MITRE tactics:
+Policy changes
 
-Detection	Use Case	MITRE Tactics
-Multiple sign-in failures from same IP	Dictionary / credential spray attempts	Credential Access
-New user added to privileged directory roles	Privilege escalation via role assignment	Privilege Escalation / Persistence
-Suspicious PowerShell execution	Common attacker execution patterns	Execution / Defense Evasion
+Key Vault modifications
 
-These rules are intentionally generic so they can be used in labs without requiring enterprise data sources.
+Designed to deploy cleanly in new environments
 
-Parameter Controls
+Advanced Rules (Source-Dependent, Optional)
 
-Deployment behavior is controlled via two Boolean parameters:
+These rules are deployed only when explicitly enabled:
 
-Parameter	Default	Behavior
-enableSentinel	false	Enables Sentinel onboarding + workspace integration
-deployAnalyticsRules	true	Deploys custom Analytics Rules into Sentinel
+Multiple sign-in failures from the same IP
 
-Examples:
+New user added to privileged Entra ID roles
 
-Enable Sentinel only:
+Suspicious PowerShell execution
 
-az deployment group create \
-  --resource-group <rg> \
-  --template-file main.bicep \
-  --parameters enableSentinel=true
+Advanced rules are gated behind parameters to avoid failed deployments when required data sources are not yet connected.
 
+Cost & Deployment Controls
 
-Enable Sentinel + Rules:
+The solution is intentionally cost-aware:
 
-az deployment group create \
-  --resource-group <rg> \
-  --template-file main.bicep \
-  --parameters enableSentinel=true deployAnalyticsRules=true
+Feature	Control
+Sentinel onboarding	enableSentinel
+Baseline analytics rules	deployAnalyticsRules
+Advanced detections	deployAdvancedRules
+Log retention	Configurable (default 30 days)
 
-Deployment Scopes
-Scope	Components
-Resource Group	Workspace + Sentinel modules
-Subscription (optional future extension)	Activity Logs, Defender plans, Policy
+This mirrors how security baselines are delivered in real consulting engagements.
+
 Repository Structure
 .
-├── main.bicep                        # core deployment entrypoint
+├── main.bicep                  # Core RG deployment
+├── main.sub.bicep              # Subscription-level activity logs
 ├── modules/
-│   ├── log-analytics.bicep           # workspace setup
-│   ├── sentinel-onboarding.bicep     # enables Sentinel via onboardingStates
-│   └── sentinel-analytics-rules.bicep# custom detections (MITRE mapped)
-├── parameters/
-│   └── dev.bicepparam                # example deployment configuration
+│   ├── log-analytics.bicep
+│   ├── sentinel-onboarding.bicep
+│   ├── sentinel-analytics-rules.bicep
+│   └── activity-log-to-law.bicep
+├── .github/workflows/
+│   └── ci-cd.yml               # GitHub Actions pipeline (OIDC)
+└── README.md
 
-Cost Considerations
+CI/CD Pipeline Highlights
 
-This baseline is designed for labs and demos:
+Uses Azure AD OIDC for secure authentication
 
-Sentinel disabled by default
+No secrets stored in GitHub
 
-30-day retention by default
+Runs what-if before deployment
 
-Minimal ingestion footprint
+Fully automated Sentinel onboarding and rule deployment
 
-No premium connectors
+Designed to be reused across environments
 
-No automation charges
+What This Project Demonstrates
 
-No Defender plan enablement
+Azure security baselining via IaC
 
-Full SOC workloads (UEBA, Threat Intel, ASC integration, Defender plans, etc.) can be layered atop this baseline if required.
+Sentinel onboarding without portal dependency
 
-Target Audience
+Detections-as-Code for SIEM platforms
 
-This baseline is intended for:
+CI/CD pipelines for security infrastructure
 
-Cloud Security Engineers
-
-Detection Engineers
-
-SOC Analysts
-
-Security Consultants
-
-Red/Purple Team Labs
-
-Interview Portfolio Demonstrations
+Enterprise-ready design patterns
